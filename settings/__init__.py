@@ -6,6 +6,7 @@ import sys
 
 PROJECT_ROOT = path.abspath(path.dirname(path.dirname(__file__)))
 sys.path.append(path.join(PROJECT_ROOT, 'apps/'))
+sys.path.append(path.join(PROJECT_ROOT, 'libs/'))
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG

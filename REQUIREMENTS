@@ -1,9 +1,11 @@
 pyparsing
+PyYAML
 Django
 Werkzeug
 pygments
 jinja2
 django-sentry
+simplejson
 git+git://github.com/miracle2k/coffin.git
 git+git://github.com/Pitmairen/hamlish-jinja.git
 git+git://github.com/traditio/webassets.git

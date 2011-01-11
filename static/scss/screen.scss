@@ -5,6 +5,47 @@
 
 /* @import "compass/reset"; */
 
-.red {
-    color: red
+// Import all the default blueprint modules so that we can access their mixins.
+@import "blueprint";
+
+@import "blueprint/fancy-type";
+@import "blueprint/grid";
+@import "compass/utilities/tables/scaffolding";
+@import "compass/utilities/lists";
+@import "compass/utilities/general/float";
+@import "compass/css3";
+@import "compass/utilities/general/clearfix";
+
+body {
+    @include fancy-type;
+    @include blueprint-typography(true);
+    p + p {
+        text-indent: 0;
+    }
+}
+
+.invisible {
+    display: none;
+}
+
+.clearfix {
+    clear: both;
+}
+
+div.form {
+    .label label { font-weight: bolder; }
+    .form_item {
+        margin-bottom: 0.5em;
+        .help {
+            font-size: smaller;
+            color: #666;
+        }
+    }
+    .error {
+        background-color: $error-bg-color;
+        margin-bottom: 0.3em;
+        display: inline-block;
+        padding: 0 0.5em;
+    }
+    span.required { color: red };
 }

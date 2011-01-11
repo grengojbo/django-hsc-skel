@@ -1,59 +1,52 @@
 \<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 \        "http://www.w3.org/TR/html4/loose.dtd">
+-macro render_form(rendered_form)
+    %div.form
+        {% csrf_token %}
+        -for error in rendered_form.non_field_errors()
+            %span.error
+                =error
+        -for field in rendered_form
+            %div.form_item
+                -if not field.is_hidden
+                    %div class="label"
+                        =field.label_tag()|safe
+                        -if field.field.required
+                            %span.required << *
+                    %div.clearfix
+                    -if field.errors
+                        -for error in field.errors
+                            %span.error
+                                =error
+                            %div.clearfix
+                    %div.field
+                        =field|safe
+                    %div.help
+                        =field.help_text
+                -else
+                    =field|safe
+            %div.clearfix
 %html
     %head
         %meta http-equiv="content-type" content="text/html; charset=UTF-8"
         %title << HAML sample
         %script type="text/javascript" src="http://yandex.st/jquery/1.4.4/jquery.min.js"
-        -assets "base.js"
-           %script type="text/javascript" src="{{ ASSET_URL }}"
-        -assets "base.css"
-           %link href="{{ ASSET_URL }}" media="all" rel="stylesheet" type="text/css"
-%body
-    %h1
-        django-hsc-skel
-    %h2
-        %a href=https://github.com/Pitmairen/hamlish-jinja << HAML
-    %p
-        Этот HTML документ написан в синтаксисе HAMLish.
-    %h2
-        %a href=http://sass-lang.com/ << SASS
-    %p
-        Этот
-        %span.red
-            стиль        
-        задан в SASS файле. Используется фреймворк
-        %a href=http://compass-style.org/ << Compass
-        \- полезные mixins и функции для SASS.
-    %h2
-        %a href=http://jashkenas.github.com/coffee-script/ << Coffee-Script
-    %p
-        Попробуйте coffee-script (альтернативный синтакис для JS) в действии. Нажмите на эту
-        %button#sample_button << кнопку
-        .
-    %h2
-        Установленные приложения
-    %p
-        %ul
-            %li
-                %a href=https://github.com/dcramer/django-sentry << Sentry
-                \- анализатор логов ошибок
-            %li
-                %a href=http://packages.python.org/django-extensions/ << django-extensions
-                \- полезные дополнительные команды для manage.py
-            %li
-                %a href=http://django-staticfiles.readthedocs.org/ << staticfiles
-                \- сборщик статических файлов из установленных приложений (например, админки)
-            %li
-                %a href=https://github.com/dcramer/coffin << coffin
-                \- адаптер джанговских фильтров, тегов и generic views к шаблонам Jinja2
-            %li
-                %a href=https://bitbucket.org/offline/django-annoying << django-annoying
-                \- полезные функции и декораторы (@render_to не работает с Jinja2 и coffin, используйте libs.decorators.render_to)
-    %hr
-    %small
-        2011,
-        %a href=mailto:traditio@gmail.com << Dmitri Patrakov
+        ;-assets "base.js"
+            ;%script type="text/javascript" src="{{ ASSET_URL }}"
+        -block js
+        ;-assets "base.css"
+           ;%link href="{{ ASSET_URL }}" media="all" rel="stylesheet" type="text/css"
+        -block css
+%body.bp
+    %div.container
+        %div#header
+			-block header
+        %div.clearfix
+        %div#content
+            -block content
+		%div.clearfix
+        %div#footer
+            -block footer
 
 
 
