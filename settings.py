@@ -114,9 +114,13 @@ INSTALLED_APPS = (
     'coffin',
     'django_extensions',
     'django_assets',
+    'django_nose',
     # Приложение проекта
     'apps.core',
 )
+
+TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
+NOSE_ARGS = ['--with-color',]
 
 LOGIN_REDIRECT_URL = '/'
 

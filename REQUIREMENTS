@@ -1,4 +1,6 @@
-'Django
+Django
+nose
+rudolf
 Werkzeug
 pygments
 Jinja2
@@ -7,5 +9,6 @@ simplejson
 -e git://github.com/miracle2k/coffin.git#egg=Coffin
 -e git://github.com/miracle2k/webassets.git#egg=webassets
 -e git://github.com/django-extensions/django-extensions.git#egg=django-extensions
+-e git://github.com/jbalogh/django-nose.git#egg=django-nose
 
 -e hg+https://bitbucket.org/offline/django-annoying#egg=django-annoying
