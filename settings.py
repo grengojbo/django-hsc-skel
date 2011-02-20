@@ -4,23 +4,20 @@ from os import path
 import os
 import sys
 
-PROJECT_ROOT = path.abspath(path.dirname(path.dirname(__file__)))
-sys.path.append(path.join(PROJECT_ROOT, 'apps/'))
-sys.path.append(path.join(PROJECT_ROOT, 'libs/'))
+PROJECT_ROOT = path.abspath(path.dirname(__file__))
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
-    ('Dmitri Patrakov', 'traditio@gmail.com'),
 )
 
 MANAGERS = ADMINS
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': '',                      # Or path to database file if using sqlite3.
+        'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+        'NAME': 'sqlite3.db',                      # Or path to database file if using sqlite3.
         'USER': '',                      # Not used with sqlite3.
         'PASSWORD': '',                  # Not used with sqlite3.
         'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
@@ -54,13 +51,11 @@ USE_L10N = True
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 # Example: "/home/media/media.lawrence.com/"
 MEDIA_ROOT = path.join(PROJECT_ROOT, 'static/')
-STATIC_ROOT = MEDIA_ROOT
 
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash if there is a path component (optional in other cases).
 # Examples: "http://media.lawrence.com", "http://example.com/media/"
 MEDIA_URL = '/static/'
-STATIC_URL = MEDIA_URL
 
 # URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
 # trailing slash.
@@ -82,7 +77,7 @@ from libs.hamlish import HamlishExtension
 ASSETS_JINJA2_EXTENSIONS = JINJA2_EXTENSIONS = [HamlishExtension]
 HAMLISH_MODE = 'debug' if DEBUG else 'compact'
 HAMLISH_DEBUG = DEBUG
-HAMLISH_ENABLE_DIV_SHORTCUT = False
+
 
 MIDDLEWARE_CLASSES = (
     'annoying.middlewares.RedirectMiddleware',
@@ -100,6 +95,14 @@ TEMPLATE_DIRS = (
     path.join(PROJECT_ROOT, 'templates/'),
 )
 
+TEMPLATE_CONTEXT_PROCESSORS = (
+    'django.contrib.auth.context_processors.auth',
+    'django.core.context_processors.debug',
+    'django.core.context_processors.i18n',
+    'django.core.context_processors.media',
+    'django.contrib.messages.context_processors.messages',
+)
+
 INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -108,34 +111,14 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.admin',
     # Сторонние приложения
-    'sentry',
-    'sentry.client',
     'coffin',
-    'staticfiles',
-    'indexer',
-    'paging',
-    'sentry',
-    'sentry.client',
     'django_extensions',
     'django_assets',
+    # Приложение проекта
+    'apps.core',
 )
 
-#--- Webassets configuration
-# Some webassets settings are located in file django_assets/env.py
-# Compass - http://compass-style.org/
-ASSETS_CACHE = not DEBUG
-COMPASS_BIN = '/var/lib/gems/1.8/bin/compass'
-assert path.isfile(COMPASS_BIN), 'Please define Compass executable as COMPASS_BIN in Django settings'
-# SASS - http://sass-lang.com/ (installed automatically with Compass)
-SASS_BIN = '/var/lib/gems/1.8/bin/sass'
-assert path.isfile(SASS_BIN), 'Please define SASS executable as SASS_BIN in Django settings'
-# Coffee-script - http://jashkenas.github.com/coffee-script/
-COFFEE_PATH = '/home/theman/local/bin/coffee'
-assert path.isfile(COFFEE_PATH), 'Please define Coffee-script executable as COFFEE_PATH in Django settings'
-
-#--- Staticfiles settings
-STATICFILES_EXCLUDED_APPS = ('sentry', 'sentry.client', 'django_extensions',)
-
+LOGIN_REDIRECT_URL = '/'
 
 # --- Logging
 import logging
@@ -143,10 +126,10 @@ LOG_DIR = path.join(PROJECT_ROOT, 'logs')
 if not path.isdir(LOG_DIR): os.makedirs(LOG_DIR)
 LOG_FILENAME = os.path.join(LOG_DIR, 'django.log')
 LOG_LEVEL = logging.DEBUG
-LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+LOG_FORMAT = '%(asctime)s - %(filename)s:%(lineno)d - %(levelname)s - %(message)s'
 
 try:
-    from current import *
+    from configs.current import *
 except ImportError:
     pass
 

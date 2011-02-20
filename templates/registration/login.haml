@@ -1,0 +1,13 @@
+-extends "base.haml"
+-block title
+    %h2 << Пожалуйста, авторизуйтесь
+-block content
+
+    -if user.is_anonymous()
+        .form
+            %form action="{% url login %}" method="post"
+                =render_form(form)
+                .submit
+                    %input type="submit" value="Войти"
+    -else
+        %p << {{ user }}, вы уже вошли на сайт.

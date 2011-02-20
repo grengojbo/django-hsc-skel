@@ -1,12 +1,12 @@
 \<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 \        "http://www.w3.org/TR/html4/loose.dtd">
--macro render_form(rendered_form)
+-macro render_form(form)
     %div.form
         {% csrf_token %}
-        -for error in rendered_form.non_field_errors()
+        -for error in form.non_field_errors()
             %span.error
                 =error
-        -for field in rendered_form
+        -for field in form
             %div.form_item
                 -if not field.is_hidden
                     %div class="label"
@@ -31,22 +31,34 @@
         %meta http-equiv="content-type" content="text/html; charset=UTF-8"
         %title << HAML sample
         %script type="text/javascript" src="http://yandex.st/jquery/1.4.4/jquery.min.js"
-        ;-assets "base.js"
-            ;%script type="text/javascript" src="{{ ASSET_URL }}"
+        -assets "all.js"
+            %script type="text/javascript" src="{{ ASSET_URL }}"
         -block js
-        ;-assets "base.css"
-           ;%link href="{{ ASSET_URL }}" media="all" rel="stylesheet" type="text/css"
+        -assets "all.css"
+           %link href="{{ ASSET_URL }}" media="all" rel="stylesheet" type="text/css"
         -block css
-%body.bp
-    %div.container
-        %div#header
-			-block header
-        %div.clearfix
-        %div#content
-            -block content
-		%div.clearfix
-        %div#footer
-            -block footer
+    %body.bp
+        %div.container
+            #header
+                -block header
+                    %div.logo
+                        %h1
+                            %a href="/" << django-hsc-skel
+                    %div.registration
+                        -if user.is_anonymous()
+                            %p
+                                %a href="{% url login %}" << Войти
+                        -else
+                            %span.user"
+                                =user.username
+                                %a.logout href="{% url logout %}" << Выйти
+            %div.clearfix
 
-
-
+            %div#content
+                %div#title
+                    -block title
+                -block content
+            .clearfix
+            #footer
+                -block footer
+                    &copy; Dmitri Patrakov, 2011

@@ -23,7 +23,7 @@ class HamlishExtension(Extension):
             hamlish_indent_string=getattr(settings, 'HAMLISH_INDENT_STRING', ' '),
             hamlish_newline_string=getattr(settings, 'HAMLISH_NEWLINE_STRING', '\n'),
             hamlish_debug=getattr(settings, 'HAMLISH_DEBUG', False),
-            hamlish_enable_div_shortcut=getattr(settings, 'HAMLISH_ENABLE_DIV_SHORTCUT', False),
+            hamlish_enable_div_shortcut=getattr(settings, 'HAMLISH_ENABLE_DIV_SHORTCUT', True),
         )
 
 
@@ -432,8 +432,8 @@ A block is a tuple with this format:
         if ' ' in value:
             value, extra_attrs = value.split(' ', 1)
 
-        match = re.findall(r'([\.#]\w+)', value)
-
+        match = re.findall(r'^([\.#]\w+)', value)
+        
         classes = []
         ids = []
         #We make the class and id the same order as in the template
@@ -443,6 +443,7 @@ A block is a tuple with this format:
             attrs = (('id', ids), ('class', classes))
 
         for m in match:
+
             if m[0] == self.CLASS_SHORTCUT:
                 classes.append(m[1:])
             else:

@@ -1,14 +1,11 @@
-pyparsing
-PyYAML
-Django
+'Django
 Werkzeug
 pygments
-jinja2
-django-sentry
+Jinja2
 simplejson
-git+git://github.com/miracle2k/coffin.git
-git+git://github.com/Pitmairen/hamlish-jinja.git
-git+git://github.com/traditio/webassets.git
-git+git://github.com/jezdez/django-staticfiles.git
-git+git://github.com/django-extensions/django-extensions.git
-hg+https://bitbucket.org/offline/django-annoying
+
+-e git://github.com/miracle2k/coffin.git#egg=Coffin
+-e git://github.com/miracle2k/webassets.git#egg=webassets
+-e git://github.com/django-extensions/django-extensions.git#egg=django-extensions
+
+-e hg+https://bitbucket.org/offline/django-annoying#egg=django-annoying

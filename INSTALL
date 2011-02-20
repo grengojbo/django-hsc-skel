@@ -1,0 +1,62 @@
+===============
+django-hsc-skel
+===============
+
+Установка зависимостей
+======================
+
+Node.JS
+-------
+::
+
+    sudo aptitde install checkinstall ruby rubygems
+    cd /tmp
+    git clone git://github.com/ry/node.git
+    cd node
+    ./configure --prefix=/opt/node
+    make
+    sudo checkinstall -D
+    sudo dpkg -i node*.deb
+    echo -e "export PATH=/opt/node/bin:/var/lib/gems/1.8/bin:\${PATH}" | sudo tee /etc/profile.d/nodejs.sh
+    source /etc/profile.d/nodejs.sh
+    cd ~
+    rm /tmp/node -rf
+
+NPM
+---
+::
+
+    git clone http://github.com/isaacs/npm.git
+    cd npm
+    git submodule update --init
+    sudo PATH=/opt/node/bin:${PATH} make install
+
+coffee-script
+-------------
+::
+
+    sudo PATH=/opt/node/bin:${PATH} /opt/node/bin/npm install coffee-script
+
+Compass и SASS
+--------------
+::
+
+    sudo apt-get install ruby rubygems
+    sudo gem install haml compass --no-rdoc --no-ri
+
+Последний этап
+--------------
+::
+
+    pip install -r REQUIREMENTS
+    ./manage.py build_static
+
+Запуск
+======
+
+Просто выполните команду::
+
+    ./manage.py runserver
+
+что бы посмотреть `демо-страницу <http://127.0.0.1:8000 >`_.
+

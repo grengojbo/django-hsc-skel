@@ -4,3 +4,4 @@ syntax: glob
 *~
 sqlite3.db
 static/admin/
+.sass-cache

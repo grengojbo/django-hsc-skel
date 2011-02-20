@@ -1,13 +1,16 @@
-/* Welcome to Compass.
- * In this file you should write your main styles. (or centralize your imports)
- * Import this file using the following HTML or equivalent:
- * <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css" /> */
+// This import applies a global reset to any page that imports this stylesheet.
+/*@import "blueprint/reset";*/
 
-/* @import "compass/reset"; */
+// To configure blueprint, edit the partials/base.sass file.
+/*@import "partials/base";*/
 
 // Import all the default blueprint modules so that we can access their mixins.
 @import "blueprint";
 
+// Combine the partials into a single screen stylesheet.
+/*@import "partials/page";*/
+/*@import "partials/form";*/
+/*@import "partials/two_col";*/
 @import "blueprint/fancy-type";
 @import "blueprint/grid";
 @import "compass/utilities/tables/scaffolding";
@@ -16,16 +19,43 @@
 @import "compass/css3";
 @import "compass/utilities/general/clearfix";
 
+$top-header-font-size: 3em;
+
+$log-meta-info-columns: 4;
+
+@mixin inline-editable-element {
+    form {
+        display: inline-block;
+        input { z-index: 100; }
+        button {
+            top: 0px;
+            bottom: 0px;
+            left: 2px;
+        }
+    }
+}
+
 body {
     @include fancy-type;
     @include blueprint-typography(true);
     p + p {
         text-indent: 0;
+        padding-top: 0.5em;
+    }
+    font-size: 13px;
+
+    h2 {
+        margin-top: 0.2em;
+        margin-bottom: 0;
     }
 }
 
+
+.container { @include container; }
+
 .invisible {
     display: none;
+
 }
 
 .clearfix {
@@ -48,4 +78,51 @@ div.form {
         padding: 0 0.5em;
     }
     span.required { color: red };
+
+
+}
+
+#header {
+    @include column($blueprint-grid-columns, true);
+    $logo-columns: 12;
+    .logo {
+
+        @include column($logo-columns);
+        h1 {
+            @include caps;
+            @include text-shadow;
+            font-size: $top-header-font-size;
+            margin-bottom: 1em;
+
+            a {
+                color: black;
+                text-decoration: none;
+            }
+        }
+    }
+
+    .registration {
+        @include column($blueprint-grid-columns - $logo-columns - $log-meta-info-columns, true);
+        text-align: right;
+        padding-top: 2em;
+
+        a {
+            font-weight: normal;
+            margin-left: 0.5em;
+            &.logout {
+                margin-left: 0em;
+            }
+        }
+        .user {
+            padding-left: 15px;
+            background: url("/static/img/icon-user.gif") no-repeat transparent 0% 50%;
+        }
+
+    }
+}
+
+#footer {
+    border-top: 1px solid;
+    padding-top:0.5em;
+    margin-top:2em;
 }
