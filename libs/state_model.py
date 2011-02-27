@@ -1,19 +1,17 @@
 #coding=utf8
 from functools import wraps
 import logging
+log = logging.getLogger(__name__)
 
 import django
 from django.db import models
-from django.db.models.fields import FieldDoesNotExist
-from django.db.models.fields.related import ReverseSingleRelatedObjectDescriptor
-
-from django.db import router
-from django.db.models.query import QuerySet
-
-log = logging.getLogger(__name__)
 
 
-def commit_changes(func):
+def save_if_commit(func):
+	'''Декоратор для сохраненения, что бы не писать в методе модели что-то вроде
+	if commit: self.save()
+	else: return
+	'''
 	@wraps(func)
 	def wrapper(inst, *args, **kwargs):
 		commit = kwargs.pop('commit', True)
@@ -26,7 +24,10 @@ def commit_changes(func):
 	return wrapper
 
 
-def update_changes(func):
+def save_as_update(func):
+	'''Декоратор для метода модели, сохраняющий ее методом update
+	(save не вызывается, сигналы не срабатывают)
+	'''
 	@wraps(func)
 	def wrapper(inst, *args, **kwargs):
 		commit = kwargs.pop('commit', True)
@@ -58,103 +59,62 @@ class ImmutableModel(models.Model):
 		else:
 			raise Exception('Don`t use manual saving for %s model instances' % self.__class__.__name__)
 
+		
 changed = django.dispatch.Signal(providing_args=["instance", "changes", "created"])
 field_changed = django.dispatch.Signal(providing_args=["instance", "field_name", "old_value", "new_value", "created"])
 
 
-class InitialValue(object):
-	'''Начальное значение
+class lazy(object):
+	'''lazy - decorator changes class method to lazy cached property
 	'''
-	
+	def __init__(self, function):
+		self._function = function
 
-class ReverseSingleRelatedObjectDescriptor(object):
-	# This class provides the functionality that makes the related-object
-	# managers available as attributes on a model class, for fields that have
-	# a single "remote" value, on the class that defines the related field.
-	# In the example "choice.poll", the poll attribute is a
-	# ReverseSingleRelatedObjectDescriptor instance.
-	def __init__(self, is_new=False):
-		self._is_new = is_new
-
-	def __get__(self, change_obj_instance, instance_type=None):
-		
-		if change_obj_instance is None:
+	def __get__(self, instance, owner=None):
+		if instance is None:
 			return self
-		cache_name = change_obj_instance._field.get_cache_name()			
-		if self._is_new:
-			self._id = change_obj_instance._new_id
-		else:
-			self._id = change_obj_instance._old_id
-			cache_name += '_old'
-					 
-		if self._id==InitialValue or not self._id:
-			return None
-			
-		try:
-			return getattr(change_obj_instance._instance, cache_name)
-		except AttributeError:
-			if self._id is None:
-				# If NULL is an allowed value, return it.
-				if change_obj_instance._field.null:
-					return None
-				raise change_obj_instance._field.rel.to.DoesNotExist
-			other_field = change_obj_instance._field.rel.get_related_field()
-			if other_field.rel:
-				params = {'%s__pk' % change_obj_instance._field.rel.field_name: self._id}
-			else:
-				params = {'%s__exact' % change_obj_instance._field.rel.field_name: self._id}
+		val = self._function(instance)
+		setattr(instance, self._function.func_name, val)
+		return val
 
-			# If the related manager indicates that it should be used for
-			# related fields, respect that.
-			rel_mgr = change_obj_instance._field.rel.to._default_manager
-			db = router.db_for_read(change_obj_instance._field.rel.to, instance=change_obj_instance._instance)
-			if getattr(rel_mgr, 'use_for_related_fields', False):
-				rel_obj = rel_mgr.using(db).get(**params)
-			else:
-				rel_obj = QuerySet(change_obj_instance._field.rel.to).using(db).get(**params)
-			setattr(change_obj_instance._instance, cache_name, rel_obj)					
-			return rel_obj
 	
-		
 class Changes(object):
-	'''Раньше изменения были tuple(old, new),
-	теперт это свой объект со своим интерфейсом.
-	'''
+	
 	def __init__(self, old, new):
 		self.old = old
 		self.new = new
-	
-	def __getitem__(self, item):
-		if item == 0 or item == 'old':
-			return self.old
-		elif item == 1 or item == 'new':
-			return self.new
-		raise KeyError('No key %s', item)
+		super(Changes, self).__init__()
+
+	def __iter__(self):
+		yield self.old
+		yield self.new
 
 	def __repr__(self):
-		return '({0}, {1})'.format(self.old, self.new)
-	
-	
-	
+		return u'(%s, %s)' % (self.old, self.new)
+
 	__str__ = __repr__
-	
-	
-class ChnagesFK(Changes):
-	'''Запросы будут в базу идти только когда обращаешься к 
-	changes['old'] или к changes.new
-	'''
-	old = ReverseSingleRelatedObjectDescriptor()
-	new = ReverseSingleRelatedObjectDescriptor(is_new=True)
 
-	def __init__(self, instance, field, old_id, new_id):
-		self._instance = instance
-		self._field = field
-		self._old_id = old_id 
-		self._new_id = new_id
-			
-	def __repr__(self):
-		return 'Lazy({0}, {1})'.format(self._old_id, self._new_id)
 	
+class RelatedChanges(Changes):
+	
+	def __init__(self, old_id, new_id, old_instance, new_instance, field):
+		self.old_id = old_id
+		self.new_id = new_id
+		self._old_instance = old_instance
+		self._new_instance = new_instance
+		self._field = field
+
+	@lazy
+	def old(self):
+		return getattr(self._old_instance, self._field.name)
+
+	@lazy
+	def new(self):
+		return getattr(self._new_instance, self._field.name)
+
+	def __repr__(self):
+		return '(%s, %s)' % (self.old_id, self.new_id)
+
 	__str__ = __repr__
 
 
@@ -165,49 +125,45 @@ class StateSavingModel(models.Model):
 	"""
 	# Note: unfortunately Django doesn't allow extending the Meta
 	# class, so we're forced to define this on the model level.
-	exclude = ()  # exclude these fields when comparing state
-	only_fields = ()  # look only at these fields when comparing state, ignore others 
-	always_save = False
+	state_ignore_fields = ()  # Fields to ignore when comparing state.
+	state_store_fields = ()  # Fields
 
 	class Meta:
 		abstract = True
 
 	@classmethod
 	def state_tracked_fields(cls):
-		for field in cls._meta.fields:
-			if cls.only_fields and field.name not in cls.only_fields:
+		for field in cls._meta.local_fields:
+			if cls.state_store_fields and field.name not in cls.state_store_fields:
 				continue
-			if cls.exclude and field.name in cls.exclude:
+			if cls.state_ignore_fields and field.name in cls.state_ignore_fields:
 				continue
-			if bool(field.rel):
-				yield ''.join((field.name,'_id')), field
-			else:
-				yield field.name, field
+			yield field
+
+	def _as_dict(self):
+		# http://stackoverflow.com/questions/110803/dirty-fields-in-django
+		return dict((field.attname, getattr(self, field.attname)) for field in self.state_tracked_fields())
 
 	def save_state(self):
-		self._initial_state = {}
-		if not self.pk:
-			for field_name, field in self.state_tracked_fields():
-				self._initial_state[field_name] = InitialValue
-		else:
-			for field_name, field in self.state_tracked_fields():
-				self._initial_state[field_name] = getattr(self, field_name)
+		self._initial_state = self._as_dict()
 
 	def reset_state(self, keep_fields=None):
 		"""Resets instance to initial state
 		@param keep_fields - list of field names whitch must be keeped in current state
-		
 		"""
 		if not self._initial_state:
 			return
 		keep_fields = keep_fields or []
-		for field_name in (field_name for field_name, field in self.state_tracked_fields() if field_name not in keep_fields):
-			setattr(self, field_name, self._initial_state.get(field_name))
+		for field in (field for field in self.state_tracked_fields() if field.name not in keep_fields):
+			setattr(self, field.attname, self._initial_state.get(field.attname))
+			if field.rel and hasattr(self, field.get_cache_name()):
+				#clear cached value of related fields
+				delattr(self, field.get_cache_name())
 
 	@property
 	def changes(self):
 		"""Generates a dict of field changes since loaded from the database.
-		
+
 		Returns a mapping of field names to (old, new) value pairs:
 		
 		>>> profile.changes
@@ -217,27 +173,29 @@ class StateSavingModel(models.Model):
 		if not self._initial_state:
 			return changes  # No initial instance? Nothing to compare to.
 
-		for field_name, field in self.state_tracked_fields():
-			new = self.__dict__.get(field_name) or getattr(self, field_name)
-			old = self._initial_state.get(field_name)
+		for field in self.state_tracked_fields():
+			new = field.get_prep_value(getattr(self, field.attname))
+			old = field.get_prep_value(self._initial_state.get(field.attname))
 			if old != new:
-				if bool(field.rel):
-					changes[field_name] = Changes(old, new)
-					field_without_id = field.name
-					changes[field_without_id] = ChnagesFK(self, self._meta.get_field_by_name(field_without_id)[0], old, new)
+				if field.rel:
+					# generate pseudo instance for old value
+					old_instance = self.__class__()
+					setattr(old_instance, field.attname, old)
+					changes[field.name] = RelatedChanges(old, new, old_instance, self, field)
 				else:
-					changes[field_name] = Changes(old, new)
+					changes[field.name] = Changes(old, new)
 		return changes
 
 	@classmethod
 	def sender_field(cls, field_name):
-		l = list([str(field_name) for field_name, field in cls.state_tracked_fields()]) 
-		assert str(field_name) in l, 'Field \'%s\' state not treacked or not exist in %s' % (field_name, str(l))
-		return cls._meta.get_field(field_name)
+		for field in cls.state_tracked_fields():
+			if field.name == field_name:
+				return field
+		raise Exception('Field "%s" state not treacked or not exist' % field_name)
 
 	def __init__(self, *args, **kwargs):
 		"""Constructor.
-		
+
 		Saves a copy of the original model, to check an instance for
 		differences later on.
 		"""
@@ -245,27 +203,18 @@ class StateSavingModel(models.Model):
 		self.save_state()
 
 	def save(self, force_insert=False, force_update=False, using=None):
+		super(StateSavingModel, self).save(force_insert, force_update, using)
 		changes = self.changes
-		if changes and not self.exclude and not self.only_fields:
-			super(StateSavingModel, self).save(force_insert, force_update, using)
-		elif self.exclude or self.only_fields or self.always_save:
-			super(StateSavingModel, self).save(force_insert, force_update, using)
-		else:
-			log.debug('Nothing changes in %s', self.__class__)
-		if changes:
-			for field_name, changed_obj in changes.items():
-				new_value = changed_obj.new
-				old_value = changed_obj.old
-				try:
-					sender = self.sender_field(field_name)
-				except FieldDoesNotExist:
-					pass # don't send a signal
-				else:
-					field_changed.send(sender, instance=self, field_name=field_name,
-									   old_value=old_value, new_value=new_value, created=not self.pk)
+		if changes:			
+			for field_name, (old_value, new_value) in changes.items():
+				sender = self.sender_field(field_name)
+				field_changed.send(sender, instance=self, field_name=field_name,
+								   old_value=old_value, new_value=new_value, created=not self.pk)
 			changed.send(self.__class__, instance=self, changes=changes, created=not self.pk)
-			self.save_state()
-			
+			log.debug('model %s has changes %s, saved', self.changes, self.__class__.__name__)
+		else:
+			log.debug('model %s has no changes, wasnt saved', self.__class__.__name__)
+		self.save_state()
+
 	def save_changes(self, using=None):
-		# TODO: make update query with only changed values
 		self.save_base(using=using, force_insert=False, force_update=True)
